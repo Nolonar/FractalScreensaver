@@ -80,13 +80,9 @@ jobs:
       env:
         Configuration: ${{ matrix.configuration }}
 
-    # Rename from .exe to .scr
-    - name: Rename
-      run: Rename-Item -Path "Fractal\bin\publish\Fractal.exe" -NewName "Fractal\bin\publish\Fractal.scr"
-
     # Upload the MSIX package: https://github.com/marketplace/actions/upload-artifact
     - name: Upload build artifacts
       uses: actions/upload-artifact@v2
       with:
         name: MSIX Package
-        path: Fractal/bin/publish/Fractal.scr
+        path: ./
