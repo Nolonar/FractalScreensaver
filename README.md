@@ -7,7 +7,6 @@ A screensaver that draws fractals
 
 ## Requirements
 - Windows 10 64 bit
-- .NET Core Desktop Runtime 3.1 or later ([64 bit][3])
 
 ## How to use
 1. Put `Fractal.scr` where you want to keep it.
