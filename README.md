@@ -18,7 +18,7 @@ A screensaver that draws fractals
 
 | Tree       | Snowflake       |
 | ---------- | --------------- |
-| [<img src="md_type_tree.png" alt="Tree" width="400">][4] | [<img src="md_type_snowflake.png" alt="Snowflake" width="400">][5] |
+| [<img src="md_type_tree.png" alt="Tree" width="400">][3] | [<img src="md_type_snowflake.png" alt="Snowflake" width="400">][4] |
 
 **Edges**: Snowflakes only. The number of edges the snowflake will have. If **Random** is enabled, edge count will be chosen at random every time.
 
@@ -42,6 +42,5 @@ A screensaver that draws fractals
 
   [1]: https://github.com/Nolonar/FractalScreensaver/workflows/.NET%20Core%20Desktop/badge.svg
   [2]: https://github.com/Nolonar/FractalScreensaver/releases/latest/download/Fractal.scr
-  [3]: https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-desktop-3.1.6-windows-x64-installer
-  [4]: md_type_tree.png
-  [5]: md_type_snowflake.png
+  [3]: md_type_tree.png
+  [4]: md_type_snowflake.png
