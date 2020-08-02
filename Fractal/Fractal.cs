@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace FractalScreenSaver
@@ -14,12 +13,6 @@ namespace FractalScreenSaver
             Tree,
             Snowflake
         }
-
-        [DllImport("shlwapi.dll")]
-        public static extern int ColorHLSToRGB(int H, int L, int S);
-        public const int HlsMaxValue = 240; // Determined through testing.
-
-        public static readonly Dictionary<int, Pen> Pens;
 
         public PointF[] Vertices { get; private set; }
         public int EdgeCount { get { return Vertices.Length - 1; } }
@@ -34,12 +27,6 @@ namespace FractalScreenSaver
         private readonly int singleColorHue;
         private readonly float bumpFactor;
         private readonly bool isInvertedBump;
-
-        static Fractal()
-        {
-            Pens = Enumerable.Range(0, HlsMaxValue + 1)
-                .ToDictionary(i => i, i => new Pen(GetColorFromHue(i)));
-        }
 
         public Fractal(Rectangle clientRectangle)
         {
@@ -59,11 +46,7 @@ namespace FractalScreenSaver
 
         private void Initialize(Type type)
         {
-            int edgeCount = Screensaver.Settings.EdgeCount;
-            if (Screensaver.Settings.IsRandomCount)
-                edgeCount = random.Next(GetMinLineCount(type), 100);
-
-            Vertices = new PointF[edgeCount + 1];
+            Vertices = new PointF[GetEdgeCount(type) + 1];
             Vertices[0] = GetFirstPoint();
             Vertices[1] = GetSecondPoint();
 
@@ -82,14 +65,23 @@ namespace FractalScreenSaver
                 FitToViewport(Vertices);
         }
 
+        private int GetEdgeCount(Type type)
+        {
+            if (type == Type.Tree)
+                return 1;
+
+            return Screensaver.Settings.IsRandomCount ?
+                random.Next(GetMinLineCount(type), 100) :
+                Screensaver.Settings.EdgeCount;
+        }
+
         private int GetMinLineCount(Type type)
         {
-            switch (type)
+            return type switch
             {
-                case Type.Snowflake:
-                    return 2;
-            }
-            return 1;
+                Type.Snowflake => 2,
+                _ => 1,
+            };
         }
 
         private PointF GetFirstPoint()
@@ -185,7 +177,7 @@ namespace FractalScreenSaver
             var result = new PointF[EdgeCount * 4 + 1];
 
             Parallel.For(0, EdgeCount, i => SplitLine(result, i));
-            result[result.Length - 1] = Vertices[EdgeCount];
+            result[^1] = Vertices[EdgeCount];
 
             if (Screensaver.Settings.KeepInViewport)
                 FitToViewport(result);
@@ -221,15 +213,7 @@ namespace FractalScreenSaver
 
         public static int GetHueFromFactor(float factor)
         {
-            return (int)(HlsMaxValue * factor);
-        }
-
-        public static Color GetColorFromHue(int hue)
-        {
-            const int luminance = HlsMaxValue / 2; // 0 is black, 240 is white.
-            const int saturation = HlsMaxValue;
-
-            return ColorTranslator.FromWin32(ColorHLSToRGB(hue, luminance, saturation));
+            return (int)(FractalForm.HlsMaxValue * factor);
         }
 
         private void FitToViewport(PointF[] vertices)
@@ -239,9 +223,8 @@ namespace FractalScreenSaver
             float resizeFactor = Math.Max(resize.X, resize.Y) + 1;
 
             Parallel.For(0, vertices.Length, i =>
-            {
-                vertices[i] = vertices[i].Add(boundaryMove).Sub(center).Div(resizeFactor).Add(center);
-            });
+                vertices[i] = vertices[i].Add(boundaryMove).Sub(center).Div(resizeFactor).Add(center)
+            );
 
             boundaryMin = PointF.Empty;
             boundaryMax = PointF.Empty;
@@ -264,18 +247,7 @@ namespace FractalScreenSaver
                 boundaryMax.Y = point.Y - offsetH;
         }
 
-        public Bitmap GetBitmap()
-        {
-            var bmp = new Bitmap(width, height);
-            using (var g = Graphics.FromImage(bmp))
-            {
-                foreach (var group in GetSameColorLines())
-                    g.DrawLines(Pens[group.Hue], group.Vertices);
-            }
-            return bmp;
-        }
-
-        private IEnumerable<SameColorLines> GetSameColorLines()
+        public IEnumerable<SameColorLines> GetSameColorLines()
         {
             if (Screensaver.Settings.IsRainbow == false)
             {

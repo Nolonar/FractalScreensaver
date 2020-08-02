@@ -39,19 +39,26 @@ namespace FractalScreenSaver
         static extern bool GetClientRect(IntPtr hWnd, out Rectangle lpRect);
         #endregion
 
+        [DllImport("shlwapi.dll")]
+        public static extern int ColorHLSToRGB(int H, int L, int S);
+
+        public const int HlsMaxValue = 240; // Determined through testing.
+
+        private readonly bool isDebug;
+        private readonly bool isPreview;
+        private readonly Stopwatch watch = new Stopwatch();
+        private readonly List<Form> mirrorForms = new List<Form>();
+        private readonly Dictionary<int, Pen> Pens;
+
         private bool isProcessing;
-        private bool isDebug;
-        private bool isPreview;
         private bool isApplicationClosed;
         private int stepsRemaining;
         private Fractal fractal;
         private Bitmap image;
-        private Stopwatch watch = new Stopwatch();
         private long computeTime, drawTime, displayTime, saveTime;
         private Point? mousePos;
-        private List<Form> mirrorForms = new List<Form>();
 
-        private bool doSave
+        private bool DoSave
         {
             get
             {
@@ -64,7 +71,14 @@ namespace FractalScreenSaver
 
         private string SaveDirectory { get { return Screensaver.Settings.SaveDestination; } }
 
+        public FractalForm()
+        {
+            Pens = Enumerable.Range(0, HlsMaxValue + 1)
+                .ToDictionary(i => i, i => new Pen(GetColorFromHue(i), LogicalToDeviceUnits(1)));
+        }
+
         public FractalForm(Option option)
+            : this()
         {
             InitializeComponent();
 
@@ -78,18 +92,23 @@ namespace FractalScreenSaver
         }
 
         public FractalForm(IntPtr previewHandle)
+            : this()
         {
             InitializeComponent();
-            InitializeForPreview(previewHandle);
-        }
 
-        private void InitializeForPreview(IntPtr previewHandle)
-        {
             // https://www.codeproject.com/articles/31376/making-a-c-screensaver
             SetParent(Handle, previewHandle);
             SetWindowLong(Handle, -16, new IntPtr(GetWindowLong(Handle, -16) | 0x40000000));
 
             isPreview = true;
+        }
+
+        public static Color GetColorFromHue(int hue)
+        {
+            const int luminance = HlsMaxValue / 2; // 0 is black, 240 is white.
+            const int saturation = HlsMaxValue;
+
+            return ColorTranslator.FromWin32(ColorHLSToRGB(hue, luminance, saturation));
         }
 
         private void CreateMirrorScreen(Screen screen)
@@ -117,7 +136,7 @@ namespace FractalScreenSaver
             foreach (Form form in mirrorForms)
                 form.Dispose();
 
-            foreach (Pen p in Fractal.Pens.Values)
+            foreach (Pen p in Pens.Values)
                 p.Dispose();
         }
 
@@ -126,12 +145,12 @@ namespace FractalScreenSaver
             if (image == null || isApplicationClosed)
                 return;
 
-            if (doSave)
+            if (DoSave)
                 saveTime = GetDurationInMilliseconds(() => SaveFractal());
 
             displayTime = GetDurationInMilliseconds(() =>
             {
-                e.Graphics.DrawImage(image, new Point(0, 0));
+                e.Graphics.DrawImage(image, new Point(0));
                 foreach (MirrorForm mf in mirrorForms)
                     mf.Draw(image);
             });
@@ -181,16 +200,16 @@ namespace FractalScreenSaver
 
         private void DrawFractal()
         {
-            try
-            {
-                image?.Dispose();
-                image = fractal.GetBitmap();
-            }
-            catch
-            {
-                if (isApplicationClosed == false) // Disposed pens can throw exceptions when form is closed -> ignore
-                    throw;
-            }
+            if (isApplicationClosed)
+                return;
+
+            image?.Dispose();
+            image = new Bitmap(ClientRectangle.Width, ClientRectangle.Height);
+
+            using var g = Graphics.FromImage(image);
+            foreach (var group in fractal.GetSameColorLines())
+                g.DrawLines(Pens[group.Hue], group.Vertices);
+
             Invalidate();
         }
 
@@ -311,7 +330,7 @@ namespace FractalScreenSaver
         protected override void OnPaint(PaintEventArgs e)
         {
             if (bmp != null)
-                e.Graphics.DrawImage(bmp, new Point(0, 0));
+                e.Graphics.DrawImage(bmp, new Point(0));
         }
     }
 }

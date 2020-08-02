@@ -13,14 +13,14 @@ namespace FractalScreenSaver
 
         private void comboType_SelectedIndexChanged(object sender, EventArgs e)
         {
-            numEdgeCount.Minimum = (Fractal.Type)comboType.SelectedItem == Fractal.Type.Snowflake
-                ? 2
-                : 1;
+            lblCount.Enabled = numEdgeCount.Enabled = cbRandomCount.Enabled = (Fractal.Type)comboType.SelectedItem == Fractal.Type.Snowflake;
+            cbRandomCount_CheckedChanged(sender, e);
         }
 
         private void cbRandomCount_CheckedChanged(object sender, EventArgs e)
         {
-            numEdgeCount.Enabled = cbRandomCount.Checked == false;
+            if (cbRandomCount.Enabled)
+                numEdgeCount.Enabled = cbRandomCount.Checked == false;
         }
 
         private void numMinBump_ValueChanged(object sender, EventArgs e)
@@ -81,7 +81,7 @@ namespace FractalScreenSaver
             cbSave.Checked = Screensaver.Settings.DoSaveFractal;
             tbSaveDir.Text = Screensaver.Settings.SaveDestination;
 
-            cbRandomCount_CheckedChanged(this, new EventArgs());
+            comboType_SelectedIndexChanged(this, new EventArgs());
             cbSave_CheckedChanged(this, new EventArgs());
         }
 
