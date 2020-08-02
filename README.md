@@ -18,7 +18,7 @@ A screensaver that draws fractals
 
 | Tree       | Snowflake       |
 | ---------- | --------------- |
-| [<img src="md_type_tree.png" alt="Tree" width="400">][3] | [<img src="md_type_snowflake.png" alt="Snowflake" width="400">][4] |
+| ![Tree][3] | ![Snowflake][4] |
 
 **Edges**: Snowflakes only. The number of edges the snowflake will have. If **Random** is enabled, edge count will be chosen at random every time.
 
