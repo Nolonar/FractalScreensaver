@@ -82,7 +82,7 @@ jobs:
 
     # Rename from .exe to .scr
     - name: Rename
-      run: Rename-Item -Path "Fractal\bin\publish\Fractal.exe" -NewName "Fractal\bin\publish\Fractal.scr"
+      run: Rename-Item -Path "Fractal\bin\publish\Fractal.exe" -NewName "Fractal.scr"
       
     # Upload the binary: https://github.com/marketplace/actions/upload-artifact
     - name: Upload build artifacts
