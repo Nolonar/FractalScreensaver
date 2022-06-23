@@ -209,7 +209,7 @@ namespace FractalScreenSaver
 
             using var g = Graphics.FromImage(image);
             foreach (var polyline in fractal.GetColoredPolyline())
-                g.DrawLines(Pens[polyline.Hue], polyline.Vertices);
+                g.DrawLines(Pens[polyline.hue], polyline.vertices);
 
             Invalidate();
         }

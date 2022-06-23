@@ -113,11 +113,11 @@ namespace FractalScreenSaver.Fractals
                 boundaryMax.Y = point.Y - offsetH;
         }
 
-        public IEnumerable<ColoredPolyline> GetColoredPolyline()
+        public IEnumerable<(int hue, PointF[] vertices)> GetColoredPolyline()
         {
             if (Screensaver.Settings.IsRainbow == false)
             {
-                yield return new ColoredPolyline(singleColorHue, Vertices);
+                yield return (singleColorHue, Vertices);
                 yield break;
             }
 
@@ -128,13 +128,13 @@ namespace FractalScreenSaver.Fractals
                 if (hue == previousHue)
                     continue;
 
-                yield return new ColoredPolyline(previousHue, Vertices[groupStart..(i + 1)]);
+                yield return (previousHue, Vertices[groupStart..(i + 1)]);
                 previousHue = hue;
                 groupStart = i;
             }
 
             if (groupStart != Vertices.Length - 1) // In case there's a group at the end which we haven't yielded yet.
-                yield return new ColoredPolyline(previousHue, Vertices[groupStart..Vertices.Length]);
+                yield return (previousHue, Vertices[groupStart..Vertices.Length]);
         }
     }
 }
