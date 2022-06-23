@@ -64,14 +64,8 @@ jobs:
       with:
         dotnet-version: 6.0.x
 
-    - name: Restore dependencies
-      run: dotnet restore
-
-    - name: Build
-      run: dotnet build --no-restore
-
     - name: Publish
-      run: dotnet publish --no-restore --no-build -p:PublishProfile=FolderProfile
+      run: dotnet publish -p:PublishProfile=FolderProfile
 
     # Rename from .exe to .scr
     - name: Rename
