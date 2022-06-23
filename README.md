@@ -3,7 +3,7 @@ A screensaver that draws fractals
 
 | Project   | Build status            | Latest release |
 | --------- | ----------------------- | -------------- |
-| Fractal   | ![.NET Core Desktop][1] | [Binaries][2]  |
+| Fractal   | ![.NET][1]              | [Binaries][2]  |
 
 ## Requirements
 - Windows 10 64 bit
@@ -40,7 +40,7 @@ A screensaver that draws fractals
 **Save fractals**: If enabled, will save an image of each fractal, after they have reached their final iteration.
 
 
-  [1]: https://github.com/Nolonar/FractalScreensaver/workflows/.NET%20Core%20Desktop/badge.svg
+  [1]: https://github.com/Nolonar/FractalScreensaver/workflows/.NET/badge.svg
   [2]: https://github.com/Nolonar/FractalScreensaver/releases/latest/download/Fractal.scr
   [3]: md_type_tree.png
   [4]: md_type_snowflake.png
