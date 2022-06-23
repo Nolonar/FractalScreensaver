@@ -36,7 +36,7 @@
 # For a complete CI/CD sample to get started with GitHub Action workflows for Desktop Applications,
 # refer to https://github.com/microsoft/github-actions-for-desktop-apps
 
-name: .NET Core Desktop
+name: .NET
 
 on:
   push:
@@ -45,9 +45,7 @@ on:
     branches: [ master ]
 
 jobs:
-
   build:
-
     strategy:
       matrix:
         configuration: [Release]
@@ -59,26 +57,21 @@ jobs:
       Solution_Name: Fractal.sln
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v2
       with:
-        fetch-depth: 0
+        dotnet-version: 6.0.x
 
-    # Install the .NET Core workload
-    - name: Install .NET Core
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 3.1.101
+    - name: Restore dependencies
+      run: dotnet restore
 
-    # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
-    - name: Setup MSBuild.exe
-      uses: microsoft/setup-msbuild@2008f912f56e61277eefaac6d1888b750582aa16
+    - name: Build
+      run: dotnet build --no-restore
 
-    # Restore the application to populate the obj folder with RuntimeIdentifiers
-    - name: Restore the application
-      run: msbuild $env:Solution_Name /t:restore /t:build /t:publish /p:Configuration=$env:Configuration /p:DeployOnBuild=true /p:PublishProfile=FolderProfile
-      env:
-        Configuration: ${{ matrix.configuration }}
+    - name: Publish
+      run: dotnet publish --no-restore --no-build -p:PublishProfile=FolderProfile
 
     # Rename from .exe to .scr
     - name: Rename
@@ -86,7 +79,7 @@ jobs:
       
     # Upload the binary: https://github.com/marketplace/actions/upload-artifact
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: Binary
         path: ./Fractal/bin/publish/Fractal.scr
