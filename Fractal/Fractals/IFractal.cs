@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Drawing;
+using System.Numerics;
 
 namespace FractalScreenSaver.Fractals
 {
@@ -13,7 +13,7 @@ namespace FractalScreenSaver.Fractals
 
         int EdgeCount { get; }
 
-        IEnumerable<(int hue, PointF[] vertices)> GetColoredPolyline();
+        IEnumerable<(int hue, Vector2[] vertices)> GetColoredPolyline();
 
         void IncreaseFractalDepth();
     }

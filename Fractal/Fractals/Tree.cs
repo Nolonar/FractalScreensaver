@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
+using System.Numerics;
 using System.Threading.Tasks;
 
 namespace FractalScreenSaver.Fractals
@@ -10,23 +10,23 @@ namespace FractalScreenSaver.Fractals
         public int EdgeCount => Vertices.Length - 1;
 
         protected readonly Random random = new();
-        private PointF boundaryMin, boundaryMax;
+        private Vector2 boundaryMin = Vector2.Zero, boundaryMax = Vector2.Zero;
 
         private readonly int width;
         private readonly int height;
-        private PointF center;
+        private Vector2 center;
 
         private readonly int singleColorHue;
         private readonly float bumpFactor;
         private readonly bool isInvertedBump;
 
-        protected PointF[] Vertices;
+        protected Vector2[] Vertices;
 
-        public Tree(Rectangle clientRectangle)
+        public Tree((int width, int height) dimensions)
         {
-            width = clientRectangle.Width;
-            height = clientRectangle.Height;
-            center = new PointF(width, height).Div(2);
+            width = dimensions.width;
+            height = dimensions.height;
+            center = new Vector2(width, height) / 2;
             if (Screensaver.Settings.IsRainbow == false)
                 singleColorHue = GetHueFromFactor((float)random.NextDouble());
 
@@ -38,12 +38,12 @@ namespace FractalScreenSaver.Fractals
             Vertices = new[] { GetFirstPoint(), GetSecondPoint() };
         }
 
-        private PointF GetFirstPoint() => new((float)random.NextDouble() * width / 10, random.Next(0, height));
-        private PointF GetSecondPoint() => GetFirstPoint().Add(new PointF((float)width * 9 / 10, 0));
+        private Vector2 GetFirstPoint() => new((float)random.NextDouble() * width / 10, random.Next(0, height));
+        private Vector2 GetSecondPoint() => GetFirstPoint() + new Vector2((float)width * 9 / 10, 0);
 
         public void IncreaseFractalDepth()
         {
-            var result = new PointF[EdgeCount * 4 + 1];
+            var result = new Vector2[EdgeCount * 4 + 1];
 
             Parallel.For(0, EdgeCount, i => SplitLine(result, i));
             result[^1] = Vertices[EdgeCount];
@@ -54,22 +54,22 @@ namespace FractalScreenSaver.Fractals
             Vertices = result;
         }
 
-        private void SplitLine(PointF[] destinationArray, int i)
+        private void SplitLine(Vector2[] destinationArray, int i)
         {
-            PointF start = Vertices[i], end = Vertices[i + 1];
+            Vector2 start = Vertices[i], end = Vertices[i + 1];
             int newIndex = i * 4; // Each line receives 3 additional points.
             destinationArray[newIndex] = start;
 
-            PointF lineVector = end.Sub(start);
-            var a = lineVector.Div(3); // Break at 1/3...
-            var b = a.Mult(2); // ... and 2/3 of the line.
-            var norm = isInvertedBump ? a.Norm(b) : b.Norm(a); // Get the normal.
-            norm = norm.Mult(bumpFactor).Add(lineVector.Div(2)); // Put normal at 1/2 of the line.
+            Vector2 lineVector = end - start;
+            var a = lineVector / 3; // Break at 1/3...
+            var b = a * 2; // ... and 2/3 of the line.
+            var norm = isInvertedBump ? a.Cross(b) : b.Cross(a); // Get the normal.
+            norm = norm * bumpFactor + lineVector / 2; // Put normal at 1/2 of the line.
 
             // Move vectors to origin.
-            a = a.Add(start);
-            b = b.Add(start);
-            norm = norm.Add(start);
+            a += start;
+            b += start;
+            norm += start;
 
             destinationArray[newIndex + 1] = a;
             destinationArray[newIndex + 2] = norm;
@@ -82,21 +82,21 @@ namespace FractalScreenSaver.Fractals
 
         public static int GetHueFromFactor(float factor) => (int)(FractalForm.HlsMaxValue * factor);
 
-        protected void FitToViewport(PointF[] vertices)
+        protected void FitToViewport(Vector2[] vertices)
         {
-            PointF boundaryMove = boundaryMin.Sub(boundaryMax).Div(2);
-            PointF resize = boundaryMin.Add(boundaryMax).Div(2).Div(center);
+            Vector2 boundaryMove = (boundaryMin - boundaryMax) / 2;
+            Vector2 resize = ((boundaryMin + boundaryMax) / 2) / center;
             float resizeFactor = Math.Max(resize.X, resize.Y) + 1;
 
             Parallel.For(0, vertices.Length, i =>
-                vertices[i] = vertices[i].Add(boundaryMove).Sub(center).Div(resizeFactor).Add(center)
+                vertices[i] = (vertices[i] + boundaryMove - center) / resizeFactor + center
             );
 
-            boundaryMin = PointF.Empty;
-            boundaryMax = PointF.Empty;
+            boundaryMin = Vector2.Zero;
+            boundaryMax = Vector2.Zero;
         }
 
-        protected void AdjustBoundary(PointF point)
+        protected void AdjustBoundary(Vector2 point)
         {
             int offset = 10;
             int offsetW = width - offset;
@@ -113,7 +113,7 @@ namespace FractalScreenSaver.Fractals
                 boundaryMax.Y = point.Y - offsetH;
         }
 
-        public IEnumerable<(int hue, PointF[] vertices)> GetColoredPolyline()
+        public IEnumerable<(int hue, Vector2[] vertices)> GetColoredPolyline()
         {
             if (Screensaver.Settings.IsRainbow == false)
             {

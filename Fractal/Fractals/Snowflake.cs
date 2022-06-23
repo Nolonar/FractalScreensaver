@@ -1,12 +1,12 @@
 ﻿using System;
-using System.Drawing;
 using System.Linq;
+using System.Numerics;
 
 namespace FractalScreenSaver.Fractals
 {
     internal class Snowflake : Tree
     {
-        public Snowflake(Rectangle clientRectangle) : base(clientRectangle)
+        public Snowflake((int width, int height) dimensions) : base(dimensions)
         {
             int edgeCount = Screensaver.Settings.EdgeCount;
             if (Screensaver.Settings.IsRandomCount)
@@ -30,7 +30,7 @@ namespace FractalScreenSaver.Fractals
 
             double rad = deg.ToRadians();
             double theta = rad;
-            PointF currentLine = Vertices[1].Sub(Vertices[0]);
+            Vector2 currentLine = Vertices[1] - Vertices[0];
             if (currentLine.X == 0)
                 theta += Math.PI / 2;
             else
@@ -38,12 +38,12 @@ namespace FractalScreenSaver.Fractals
 
             for (int i = 2; i < Vertices.Length; i++)
             {
-                PointF previous = Vertices[i - 1];
-                PointF a = previous.Sub(Vertices[i - 2]);
+                Vector2 previous = Vertices[i - 1];
+                Vector2 a = previous - Vertices[i - 2];
                 double length = Math.Sqrt(a.X * a.X + a.Y * a.Y);
                 a.X = (float)(length * Math.Cos(theta));
                 a.Y = (float)(length * Math.Sin(theta));
-                a = a.Add(previous);
+                a += previous;
                 Vertices[i] = a;
                 theta += rad;
 

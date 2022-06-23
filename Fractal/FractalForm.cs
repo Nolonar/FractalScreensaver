@@ -60,10 +60,10 @@ namespace FractalScreenSaver
         private long computeTime, drawTime, displayTime, saveTime;
         private Point? mousePos;
 
-        private readonly Dictionary<IFractal.Type, Func<Rectangle, IFractal>> FractalFactoryMapper = new()
+        private readonly Dictionary<IFractal.Type, Func<(int width, int height), IFractal>> FractalFactoryMapper = new()
         {
-            { IFractal.Type.Tree, rectangle => new Tree(rectangle) },
-            { IFractal.Type.Snowflake, rectangle => new Snowflake(rectangle) }
+            { IFractal.Type.Tree, dimensions => new Tree(dimensions) },
+            { IFractal.Type.Snowflake, dimensions => new Snowflake(dimensions) }
         };
 
         private bool DoSave =>
@@ -172,6 +172,11 @@ namespace FractalScreenSaver
             DrawString(g, $"Edges: {fractal.EdgeCount}", 0, 160);
         }
 
+        private void ResetDiagnosticsStats()
+        {
+            computeTime = drawTime = displayTime = 0;
+        }
+
         private void DrawString(Graphics g, string text, int x, int y)
         {
             using var font = new Font("Arial", 12);
@@ -209,7 +214,7 @@ namespace FractalScreenSaver
 
             using var g = Graphics.FromImage(image);
             foreach (var polyline in fractal.GetColoredPolyline())
-                g.DrawLines(Pens[polyline.hue], polyline.vertices);
+                g.DrawLines(Pens[polyline.hue], polyline.vertices.Select(v => new PointF(v.X, v.Y)).ToArray());
 
             Invalidate();
         }
@@ -265,9 +270,10 @@ namespace FractalScreenSaver
 
         private void StartNewFractal()
         {
-            fractal = FractalFactoryMapper[(IFractal.Type)Screensaver.Settings.FractalType](ClientRectangle);
+            fractal = FractalFactoryMapper[(IFractal.Type)Screensaver.Settings.FractalType]((ClientRectangle.Width, ClientRectangle.Height));
             stepsRemaining = Screensaver.Settings.FractalIterations;
 
+            ResetDiagnosticsStats();
             DrawFractal();
         }
 
