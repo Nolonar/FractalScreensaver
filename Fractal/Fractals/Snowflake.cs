@@ -10,41 +10,41 @@ namespace FractalScreenSaver.Fractals
         {
             int edgeCount = Screensaver.Settings.EdgeCount;
             if (Screensaver.Settings.IsRandomCount)
-                edgeCount = random.Next(2, 100);
+                edgeCount = Screensaver.Random.Next(2, 100);
 
-            Array.Resize(ref Vertices, edgeCount + 1);
+            Array.Resize(ref vertices, edgeCount + 1);
 
             Initialize();
 
             if (Screensaver.Settings.KeepInViewport)
-                FitToViewport(Vertices);
+                FitToViewport(vertices);
         }
 
         private void Initialize()
         {
             int edges = EdgeCount;
-            bool isConcave = IsConcavePolygonPossible(edges) && random.NextBool(1 - 1 / (edges - 3));
+            bool isConcave = IsConcavePolygonPossible(edges) && Screensaver.Random.NextBool(1 - 1 / (edges - 3));
             double deg = isConcave
                 ? GetConcavePolygonDegree(edges, GetRandomDensityForConcavePolygon(edges))
                 : GetConvexPolygonDegree(edges);
 
             double rad = deg.ToRadians();
             double theta = rad;
-            Vector2 currentLine = Vertices[1] - Vertices[0];
+            Vector2 currentLine = vertices[1] - vertices[0];
             if (currentLine.X == 0)
                 theta += Math.PI / 2;
             else
                 theta += Math.Atan(currentLine.Y / currentLine.X);
 
-            for (int i = 2; i < Vertices.Length; i++)
+            for (int i = 2; i < vertices.Length; i++)
             {
-                Vector2 previous = Vertices[i - 1];
-                Vector2 a = previous - Vertices[i - 2];
-                double length = Math.Sqrt(a.X * a.X + a.Y * a.Y);
+                Vector2 previous = vertices[i - 1];
+                Vector2 a = previous - vertices[i - 2];
+                float length = a.Length();
                 a.X = (float)(length * Math.Cos(theta));
                 a.Y = (float)(length * Math.Sin(theta));
                 a += previous;
-                Vertices[i] = a;
+                vertices[i] = a;
                 theta += rad;
 
                 if (theta > 2 * Math.PI)
@@ -69,7 +69,7 @@ namespace FractalScreenSaver.Fractals
                 || edges >= 7;
         }
 
-        private int GetRandomDensityForConcavePolygon(int edges)
+        private static int GetRandomDensityForConcavePolygon(int edges)
         {
             int maxDensity = edges / 2 + edges % 2;
             var potentialDensities = Enumerable.Range(2, edges) // Must be at least 2.
@@ -77,7 +77,7 @@ namespace FractalScreenSaver.Fractals
                 .Where(i => GCD(edges, i) == 1) // Must be coprime.
                 .ToList();
 
-            return potentialDensities[random.Next(potentialDensities.Count)];
+            return potentialDensities[Screensaver.Random.Next(potentialDensities.Count)];
         }
     }
 }

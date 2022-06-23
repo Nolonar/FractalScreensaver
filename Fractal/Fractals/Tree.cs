@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
 
@@ -7,38 +6,35 @@ namespace FractalScreenSaver.Fractals
 {
     internal class Tree : IFractal
     {
-        public int EdgeCount => Vertices.Length - 1;
+        public int EdgeCount => vertices.Length - 1;
+        public Vector2[] Vertices => vertices;
 
-        protected readonly Random random = new();
         private Vector2 boundaryMin = Vector2.Zero, boundaryMax = Vector2.Zero;
 
         private readonly int width;
         private readonly int height;
         private Vector2 center;
 
-        private readonly int singleColorHue;
         private readonly float bumpFactor;
         private readonly bool isInvertedBump;
 
-        protected Vector2[] Vertices;
+        protected Vector2[] vertices;
 
         public Tree((int width, int height) dimensions)
         {
             width = dimensions.width;
             height = dimensions.height;
             center = new Vector2(width, height) / 2;
-            if (Screensaver.Settings.IsRainbow == false)
-                singleColorHue = GetHueFromFactor((float)random.NextDouble());
 
             float minBumpLength = (float)Screensaver.Settings.MinBumpLength;
             float maxBumpLength = (float)Screensaver.Settings.MaxBumpLength;
-            bumpFactor = (float)random.NextDouble() * (maxBumpLength - minBumpLength) + minBumpLength;
-            isInvertedBump = random.NextBool();
+            bumpFactor = (float)Screensaver.Random.NextDouble() * (maxBumpLength - minBumpLength) + minBumpLength;
+            isInvertedBump = Screensaver.Random.NextBool();
 
-            Vertices = new[] { GetFirstPoint(), GetSecondPoint() };
+            vertices = new[] { GetFirstPoint(), GetSecondPoint() };
         }
 
-        private Vector2 GetFirstPoint() => new((float)random.NextDouble() * width / 10, random.Next(0, height));
+        private Vector2 GetFirstPoint() => new((float)Screensaver.Random.NextDouble() * width / 10, Screensaver.Random.Next(0, height));
         private Vector2 GetSecondPoint() => GetFirstPoint() + new Vector2((float)width * 9 / 10, 0);
 
         public void IncreaseFractalDepth()
@@ -46,17 +42,17 @@ namespace FractalScreenSaver.Fractals
             var result = new Vector2[EdgeCount * 4 + 1];
 
             Parallel.For(0, EdgeCount, i => SplitLine(result, i));
-            result[^1] = Vertices[EdgeCount];
+            result[^1] = vertices[EdgeCount];
 
             if (Screensaver.Settings.KeepInViewport)
                 FitToViewport(result);
 
-            Vertices = result;
+            vertices = result;
         }
 
         private void SplitLine(Vector2[] destinationArray, int i)
         {
-            Vector2 start = Vertices[i], end = Vertices[i + 1];
+            Vector2 start = vertices[i], end = vertices[i + 1];
             int newIndex = i * 4; // Each line receives 3 additional points.
             destinationArray[newIndex] = start;
 
@@ -79,8 +75,6 @@ namespace FractalScreenSaver.Fractals
             AdjustBoundary(norm);
             AdjustBoundary(b);
         }
-
-        public static int GetHueFromFactor(float factor) => (int)(FractalForm.HlsMaxValue * factor);
 
         protected void FitToViewport(Vector2[] vertices)
         {
@@ -111,30 +105,6 @@ namespace FractalScreenSaver.Fractals
                 boundaryMin.Y = offset - point.Y;
             else if (point.Y > offsetH && point.Y - offsetH > boundaryMax.Y)
                 boundaryMax.Y = point.Y - offsetH;
-        }
-
-        public IEnumerable<(int hue, Vector2[] vertices)> GetColoredPolyline()
-        {
-            if (Screensaver.Settings.IsRainbow == false)
-            {
-                yield return (singleColorHue, Vertices);
-                yield break;
-            }
-
-            int previousHue = 0, groupStart = 0;
-            for (int i = 1; i < Vertices.Length; i++)
-            {
-                int hue = GetHueFromFactor(i / (float)Vertices.Length);
-                if (hue == previousHue)
-                    continue;
-
-                yield return (previousHue, Vertices[groupStart..(i + 1)]);
-                previousHue = hue;
-                groupStart = i;
-            }
-
-            if (groupStart != Vertices.Length - 1) // In case there's a group at the end which we haven't yielded yet.
-                yield return (previousHue, Vertices[groupStart..Vertices.Length]);
         }
     }
 }

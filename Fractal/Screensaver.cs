@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+
 using FractalScreenSaver.Properties;
 
 namespace FractalScreenSaver
@@ -21,6 +22,8 @@ namespace FractalScreenSaver
         }
 
         internal static Settings Settings { get { return Settings.Default; } }
+
+        internal static Random Random = new();
 
         [STAThread]
         static void Main(string[] args)

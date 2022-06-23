@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -44,7 +45,7 @@ namespace FractalScreenSaver
         [DllImport("shlwapi.dll")]
         private static extern int ColorHLSToRGB(int H, int L, int S);
 
-        public const int HlsMaxValue = 240; // Determined through testing.
+        private const int HlsMaxValue = 240; // Determined through testing.
 
         private readonly bool isDebug;
         private readonly bool isPreview;
@@ -73,6 +74,8 @@ namespace FractalScreenSaver
             isDebug == false;
 
         private static string SaveDirectory => Screensaver.Settings.SaveDestination;
+
+        private static int GetHueFromFactor(double factor) => (int)(HlsMaxValue * factor);
 
         public FractalForm()
         {
@@ -213,10 +216,34 @@ namespace FractalScreenSaver
             image = new Bitmap(ClientRectangle.Width, ClientRectangle.Height);
 
             using var g = Graphics.FromImage(image);
-            foreach (var polyline in fractal.GetColoredPolyline())
-                g.DrawLines(Pens[polyline.hue], polyline.vertices.Select(v => new PointF(v.X, v.Y)).ToArray());
+            foreach ((int hue, Vector2[] vertices) in GetPolylines(fractal.Vertices))
+                g.DrawLines(Pens[hue], vertices.Select(v => new PointF(v.X, v.Y)).ToArray());
 
             Invalidate();
+        }
+
+        public static IEnumerable<(int hue, Vector2[] vertices)> GetPolylines(Vector2[] vertices)
+        {
+            if (Screensaver.Settings.IsRainbow == false)
+            {
+                yield return (GetHueFromFactor(Screensaver.Random.NextDouble()), vertices);
+                yield break;
+            }
+
+            int previousHue = 0, groupStart = 0;
+            for (int i = 1; i < vertices.Length; i++)
+            {
+                int hue = GetHueFromFactor(i / (double)vertices.Length);
+                if (hue == previousHue)
+                    continue;
+
+                yield return (previousHue, vertices[groupStart..(i + 1)]);
+                previousHue = hue;
+                groupStart = i;
+            }
+
+            if (groupStart != vertices.Length - 1) // In case there's a group at the end which we haven't yielded yet.
+                yield return (previousHue, vertices[groupStart..vertices.Length]);
         }
 
         private async void NextFractalTimer_Tick(object sender, EventArgs e) =>
