@@ -35,11 +35,11 @@
             // 
             // iterationTimer
             // 
-            this.iterationTimer.Tick += new System.EventHandler(this.iterationTimer_Tick);
+            this.iterationTimer.Tick += new System.EventHandler(this.IterationTimer_Tick);
             // 
             // nextFractalTimer
             // 
-            this.nextFractalTimer.Tick += new System.EventHandler(this.nextFractalTimer_Tick);
+            this.nextFractalTimer.Tick += new System.EventHandler(this.NextFractalTimer_Tick);
             // 
             // FractalForm
             // 

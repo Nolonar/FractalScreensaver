@@ -9,6 +9,8 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+using FractalScreenSaver.Fractals;
+
 namespace FractalScreenSaver
 {
     public partial class FractalForm : Form
@@ -40,36 +42,37 @@ namespace FractalScreenSaver
         #endregion
 
         [DllImport("shlwapi.dll")]
-        public static extern int ColorHLSToRGB(int H, int L, int S);
+        private static extern int ColorHLSToRGB(int H, int L, int S);
 
         public const int HlsMaxValue = 240; // Determined through testing.
 
         private readonly bool isDebug;
         private readonly bool isPreview;
-        private readonly Stopwatch watch = new Stopwatch();
-        private readonly List<Form> mirrorForms = new List<Form>();
+        private readonly Stopwatch watch = new();
+        private readonly List<Form> mirrorForms = new();
         private readonly Dictionary<int, Pen> Pens;
 
         private bool isProcessing;
         private bool isApplicationClosed;
         private int stepsRemaining;
-        private Fractal fractal;
+        private IFractal fractal;
         private Bitmap image;
         private long computeTime, drawTime, displayTime, saveTime;
         private Point? mousePos;
 
-        private bool DoSave
+        private readonly Dictionary<IFractal.Type, Func<Rectangle, IFractal>> FractalFactoryMapper = new()
         {
-            get
-            {
-                return stepsRemaining == 0
-                    && Screensaver.Settings.DoSaveFractal
-                    && isPreview == false
-                    && isDebug == false;
-            }
-        }
+            { IFractal.Type.Tree, rectangle => new Tree(rectangle) },
+            { IFractal.Type.Snowflake, rectangle => new Snowflake(rectangle) }
+        };
 
-        private string SaveDirectory { get { return Screensaver.Settings.SaveDestination; } }
+        private bool DoSave =>
+            stepsRemaining == 0 &&
+            Screensaver.Settings.DoSaveFractal &&
+            isPreview == false &&
+            isDebug == false;
+
+        private static string SaveDirectory => Screensaver.Settings.SaveDestination;
 
         public FractalForm()
         {
@@ -77,8 +80,7 @@ namespace FractalScreenSaver
                 .ToDictionary(i => i, i => new Pen(GetColorFromHue(i), LogicalToDeviceUnits(1)));
         }
 
-        public FractalForm(Option option)
-            : this()
+        public FractalForm(Option option) : this()
         {
             InitializeComponent();
 
@@ -91,14 +93,13 @@ namespace FractalScreenSaver
                 CreateMirrorScreen(screen);
         }
 
-        public FractalForm(IntPtr previewHandle)
-            : this()
+        public FractalForm(IntPtr previewHandle) : this()
         {
             InitializeComponent();
 
             // https://www.codeproject.com/articles/31376/making-a-c-screensaver
-            SetParent(Handle, previewHandle);
-            SetWindowLong(Handle, -16, new IntPtr(GetWindowLong(Handle, -16) | 0x40000000));
+            _ = SetParent(Handle, previewHandle);
+            _ = SetWindowLong(Handle, -16, new IntPtr(GetWindowLong(Handle, -16) | 0x40000000));
 
             isPreview = true;
         }
@@ -127,7 +128,7 @@ namespace FractalScreenSaver
             iterationTimer.Interval = Screensaver.Settings.IterationDelay;
             nextFractalTimer.Interval = Screensaver.Settings.FractalDelay;
 
-            nextFractalTimer_Tick(this, new EventArgs());
+            NextFractalTimer_Tick(this, new EventArgs());
         }
 
         private void FractalForm_FormClosed(object sender, FormClosedEventArgs e)
@@ -168,14 +169,14 @@ namespace FractalScreenSaver
             DrawString(g, $"Display: {displayTime} milliseconds", 0, 80);
             DrawString(g, $"Save: {saveTime} milliseconds", 0, 100);
             DrawString(g, $"Remaining: {stepsRemaining}", 0, 120);
-            DrawString(g, $"Vertices: {fractal.Vertices.Length}", 0, 160);
+            DrawString(g, $"Edges: {fractal.EdgeCount}", 0, 160);
         }
 
         private void DrawString(Graphics g, string text, int x, int y)
         {
-            using (var font = new Font("Arial", 12))
-            using (var brush = new SolidBrush(Color.White))
-                g.DrawString(text, font, brush, LogicalToDeviceUnits(x), LogicalToDeviceUnits(y));
+            using var font = new Font("Arial", 12);
+            using var brush = new SolidBrush(Color.White);
+            g.DrawString(text, font, brush, LogicalToDeviceUnits(x), LogicalToDeviceUnits(y));
         }
 
         private long GetDurationInMilliseconds(Action action)
@@ -187,7 +188,7 @@ namespace FractalScreenSaver
 
         private void SaveFractal()
         {
-            string fileName = $"Fractal{DateTime.UtcNow.ToString("yyyy-MM-dd_HH-mm-ss")}.png";
+            string fileName = $"Fractal{DateTime.UtcNow:yyyy-MM-dd_HH-mm-ss}.png";
             string savePath = Path.Combine(SaveDirectory, fileName);
 
             try
@@ -207,17 +208,17 @@ namespace FractalScreenSaver
             image = new Bitmap(ClientRectangle.Width, ClientRectangle.Height);
 
             using var g = Graphics.FromImage(image);
-            foreach (var group in fractal.GetSameColorLines())
-                g.DrawLines(Pens[group.Hue], group.Vertices);
+            foreach (var polyline in fractal.GetColoredPolyline())
+                g.DrawLines(Pens[polyline.Hue], polyline.Vertices);
 
             Invalidate();
         }
 
-        private async void iterationTimer_Tick(object sender, EventArgs e)
-        {
-            // Ensure that the screensaver can exit at any time, even if the next iteration may take a while to complete.
-            await ProcessSingleInstance(HandleIteration);
-        }
+        private async void NextFractalTimer_Tick(object sender, EventArgs e) =>
+            await ProcessSingleInstance(HandleNextFractal);
+
+        private async void IterationTimer_Tick(object sender, EventArgs e) =>
+            await ProcessSingleInstance(HandleIteration); // Ensure that the screensaver can exit at any time, even if the next iteration may take a while to complete.
 
         private void HandleIteration()
         {
@@ -229,11 +230,6 @@ namespace FractalScreenSaver
 
             computeTime = GetDurationInMilliseconds(() => fractal.IncreaseFractalDepth());
             drawTime = GetDurationInMilliseconds(() => DrawFractal());
-        }
-
-        private async void nextFractalTimer_Tick(object sender, EventArgs e)
-        {
-            await ProcessSingleInstance(HandleNextFractal);
         }
 
         private void HandleNextFractal()
@@ -254,7 +250,7 @@ namespace FractalScreenSaver
         private void RunOnGuiThread(Action action)
         {
             if (InvokeRequired)
-                BeginInvoke(action);
+                _ = BeginInvoke(action);
         }
 
         private async Task ProcessSingleInstance(Action action)
@@ -269,7 +265,7 @@ namespace FractalScreenSaver
 
         private void StartNewFractal()
         {
-            fractal = new Fractal(ClientRectangle);
+            fractal = FractalFactoryMapper[(IFractal.Type)Screensaver.Settings.FractalType](ClientRectangle);
             stepsRemaining = Screensaver.Settings.FractalIterations;
 
             DrawFractal();

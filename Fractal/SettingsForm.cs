@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Windows.Forms;
 
+using FractalScreenSaver.Fractals;
+
 namespace FractalScreenSaver
 {
     public partial class SettingsForm : Form
@@ -8,47 +10,39 @@ namespace FractalScreenSaver
         public SettingsForm()
         {
             InitializeComponent();
-            comboType.DataSource = Enum.GetValues(typeof(Fractal.Type));
+            comboType.DataSource = Enum.GetValues(typeof(IFractal.Type));
         }
 
-        private void comboType_SelectedIndexChanged(object sender, EventArgs e)
+        private void ComboType_SelectedIndexChanged(object sender, EventArgs e)
         {
-            lblCount.Enabled = numEdgeCount.Enabled = cbRandomCount.Enabled = (Fractal.Type)comboType.SelectedItem == Fractal.Type.Snowflake;
-            cbRandomCount_CheckedChanged(sender, e);
+            lblCount.Enabled = numEdgeCount.Enabled = cbRandomCount.Enabled = (IFractal.Type)comboType.SelectedItem == IFractal.Type.Snowflake;
+            CbRandomCount_CheckedChanged(sender, e);
         }
 
-        private void cbRandomCount_CheckedChanged(object sender, EventArgs e)
+        private void CbRandomCount_CheckedChanged(object sender, EventArgs e)
         {
             if (cbRandomCount.Enabled)
                 numEdgeCount.Enabled = cbRandomCount.Checked == false;
         }
 
-        private void numMinBump_ValueChanged(object sender, EventArgs e)
-        {
+        private void NumMinBump_ValueChanged(object sender, EventArgs e) =>
             numMaxBump.Value = Math.Max(numMinBump.Value, numMaxBump.Value);
-        }
 
-        private void numMaxBump_ValueChanged(object sender, EventArgs e)
-        {
+        private void NumMaxBump_ValueChanged(object sender, EventArgs e) =>
             numMinBump.Value = Math.Min(numMinBump.Value, numMaxBump.Value);
-        }
 
-        private void cbSave_CheckedChanged(object sender, EventArgs e)
-        {
+        private void CbSave_CheckedChanged(object sender, EventArgs e) =>
             tbSaveDir.Enabled = btnBrowseSaveDir.Enabled = cbSave.Checked;
-        }
 
-        private void btnBrowseSaveDir_Click(object sender, EventArgs e)
+        private void BtnBrowseSaveDir_Click(object sender, EventArgs e)
         {
-            using (var fbd = new FolderBrowserDialog())
-            {
-                fbd.SelectedPath = tbSaveDir.Text;
-                if (fbd.ShowDialog() == DialogResult.OK)
-                    tbSaveDir.Text = fbd.SelectedPath;
-            }
+            using var fbd = new FolderBrowserDialog();
+            fbd.SelectedPath = tbSaveDir.Text;
+            if (fbd.ShowDialog() == DialogResult.OK)
+                tbSaveDir.Text = fbd.SelectedPath;
         }
 
-        private void btnApply_Click(object sender, EventArgs e)
+        private void BtnApply_Click(object sender, EventArgs e)
         {
             Screensaver.Settings.FractalType = (int)comboType.SelectedItem;
             Screensaver.Settings.EdgeCount = (int)numEdgeCount.Value;
@@ -68,7 +62,7 @@ namespace FractalScreenSaver
 
         private void ConfigurationForm_Load(object sender, EventArgs e)
         {
-            comboType.SelectedItem = (Fractal.Type)Screensaver.Settings.FractalType;
+            comboType.SelectedItem = (IFractal.Type)Screensaver.Settings.FractalType;
             numEdgeCount.Value = GetSanitizedEdgeCountValue(Screensaver.Settings.EdgeCount);
             cbRandomCount.Checked = Screensaver.Settings.IsRandomCount;
             numIterations.Value = Screensaver.Settings.FractalIterations;
@@ -81,13 +75,11 @@ namespace FractalScreenSaver
             cbSave.Checked = Screensaver.Settings.DoSaveFractal;
             tbSaveDir.Text = Screensaver.Settings.SaveDestination;
 
-            comboType_SelectedIndexChanged(this, new EventArgs());
-            cbSave_CheckedChanged(this, new EventArgs());
+            ComboType_SelectedIndexChanged(this, new EventArgs());
+            CbSave_CheckedChanged(this, new EventArgs());
         }
 
-        private int GetSanitizedEdgeCountValue(int edgeCount)
-        {
-            return (int)Math.Min(Math.Max(edgeCount, numEdgeCount.Minimum), numEdgeCount.Maximum);
-        }
+        private int GetSanitizedEdgeCountValue(int edgeCount) =>
+            (int)Math.Min(Math.Max(edgeCount, numEdgeCount.Minimum), numEdgeCount.Maximum);
     }
 }

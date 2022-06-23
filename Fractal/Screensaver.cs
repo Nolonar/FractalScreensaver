@@ -27,7 +27,7 @@ namespace FractalScreenSaver
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            SetProcessDpiAwareness((int)DpiAwareness.PerMonitorAware); // Required because DPI Awareness from app.manifest doesn't work when run as screensaver
+            _ = SetProcessDpiAwareness((int)DpiAwareness.PerMonitorAware); // Required because DPI Awareness from app.manifest doesn't work when run as screensaver
 
             EnsureSaveDestinationIsSet();
             switch (args.FirstOrDefault()?.Substring(1, 1).ToUpper())

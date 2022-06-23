@@ -116,7 +116,7 @@
             this.cbRandomCount.TabIndex = 4;
             this.cbRandomCount.Text = "Random";
             this.cbRandomCount.UseVisualStyleBackColor = true;
-            this.cbRandomCount.CheckedChanged += new System.EventHandler(this.cbRandomCount_CheckedChanged);
+            this.cbRandomCount.CheckedChanged += new System.EventHandler(this.CbRandomCount_CheckedChanged);
             // 
             // lblIterations
             // 
@@ -199,7 +199,7 @@
             this.comboType.Name = "comboType";
             this.comboType.Size = new System.Drawing.Size(274, 33);
             this.comboType.TabIndex = 1;
-            this.comboType.SelectedIndexChanged += new System.EventHandler(this.comboType_SelectedIndexChanged);
+            this.comboType.SelectedIndexChanged += new System.EventHandler(this.ComboType_SelectedIndexChanged);
             // 
             // groupAppearance
             // 
@@ -232,7 +232,7 @@
             this.numMaxBump.Name = "numMaxBump";
             this.numMaxBump.Size = new System.Drawing.Size(167, 31);
             this.numMaxBump.TabIndex = 6;
-            this.numMaxBump.ValueChanged += new System.EventHandler(this.numMaxBump_ValueChanged);
+            this.numMaxBump.ValueChanged += new System.EventHandler(this.NumMaxBump_ValueChanged);
             // 
             // lblMaxBump
             // 
@@ -258,7 +258,7 @@
             this.numMinBump.Name = "numMinBump";
             this.numMinBump.Size = new System.Drawing.Size(167, 31);
             this.numMinBump.TabIndex = 4;
-            this.numMinBump.ValueChanged += new System.EventHandler(this.numMinBump_ValueChanged);
+            this.numMinBump.ValueChanged += new System.EventHandler(this.NumMinBump_ValueChanged);
             // 
             // lblMinBump
             // 
@@ -403,7 +403,7 @@
             this.btnBrowseSaveDir.TabIndex = 2;
             this.btnBrowseSaveDir.Text = "Browse";
             this.btnBrowseSaveDir.UseVisualStyleBackColor = true;
-            this.btnBrowseSaveDir.Click += new System.EventHandler(this.btnBrowseSaveDir_Click);
+            this.btnBrowseSaveDir.Click += new System.EventHandler(this.BtnBrowseSaveDir_Click);
             // 
             // tbSaveDir
             // 
@@ -426,7 +426,7 @@
             this.cbSave.TabIndex = 0;
             this.cbSave.Text = "Save fractals";
             this.cbSave.UseVisualStyleBackColor = true;
-            this.cbSave.CheckedChanged += new System.EventHandler(this.cbSave_CheckedChanged);
+            this.cbSave.CheckedChanged += new System.EventHandler(this.CbSave_CheckedChanged);
             // 
             // btnOk
             // 
@@ -439,7 +439,7 @@
             this.btnOk.TabIndex = 1;
             this.btnOk.Text = "OK";
             this.btnOk.UseVisualStyleBackColor = true;
-            this.btnOk.Click += new System.EventHandler(this.btnApply_Click);
+            this.btnOk.Click += new System.EventHandler(this.BtnApply_Click);
             // 
             // btnApply
             // 
@@ -451,7 +451,7 @@
             this.btnApply.TabIndex = 2;
             this.btnApply.Text = "Apply";
             this.btnApply.UseVisualStyleBackColor = true;
-            this.btnApply.Click += new System.EventHandler(this.btnApply_Click);
+            this.btnApply.Click += new System.EventHandler(this.BtnApply_Click);
             // 
             // btnCancel
             // 
