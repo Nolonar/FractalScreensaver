@@ -31,10 +31,7 @@ namespace FractalScreenSaver.Fractals
             double rad = deg.ToRadians();
             double theta = rad;
             Vector2 currentLine = vertices[1] - vertices[0];
-            if (currentLine.X == 0)
-                theta += Math.PI / 2;
-            else
-                theta += Math.Atan(currentLine.Y / currentLine.X);
+            theta += currentLine.X == 0 ? Math.PI / 2 : Math.Atan(currentLine.Y / currentLine.X);
 
             for (int i = 2; i < vertices.Length; i++)
             {

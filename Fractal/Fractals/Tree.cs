@@ -26,15 +26,15 @@ namespace FractalScreenSaver.Fractals
             height = dimensions.height;
             center = new Vector2(width, height) / 2;
 
-            float minBumpLength = (float)Screensaver.Settings.MinBumpLength;
-            float maxBumpLength = (float)Screensaver.Settings.MaxBumpLength;
-            bumpFactor = (float)Screensaver.Random.NextDouble() * (maxBumpLength - minBumpLength) + minBumpLength;
+            double minBumpLength = (double)Screensaver.Settings.MinBumpLength;
+            double maxBumpLength = (double)Screensaver.Settings.MaxBumpLength;
+            bumpFactor = (float)Screensaver.Random.NextDouble(minBumpLength, maxBumpLength);
             isInvertedBump = Screensaver.Random.NextBool();
 
             vertices = new[] { GetFirstPoint(), GetSecondPoint() };
         }
 
-        private Vector2 GetFirstPoint() => new((float)Screensaver.Random.NextDouble() * width / 10, Screensaver.Random.Next(0, height));
+        private Vector2 GetFirstPoint() => new((float)Screensaver.Random.NextDouble(0, width / 10), Screensaver.Random.Next(0, height));
         private Vector2 GetSecondPoint() => GetFirstPoint() + new Vector2((float)width * 9 / 10, 0);
 
         public void IncreaseFractalDepth()

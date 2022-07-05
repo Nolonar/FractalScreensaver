@@ -17,6 +17,9 @@ namespace FractalScreenSaver
 
         public static bool NextBool(this Random r, double probability) =>
             r.NextDouble() <= probability;
+
+        public static double NextDouble(this Random r, double min, double max) =>
+            r.NextDouble() * (max - min) + min;
     }
 
     public static class DoubleExtensions

@@ -21,7 +21,7 @@ namespace FractalScreenSaver
             PerMonitorAware = 2
         }
 
-        internal static Settings Settings { get { return Settings.Default; } }
+        internal static Settings Settings => Settings.Default;
 
         internal static Random Random = new();
 
@@ -36,27 +36,37 @@ namespace FractalScreenSaver
             switch (args.FirstOrDefault()?.Substring(1, 1).ToUpper())
             {
                 case null:
+#if DEBUG
                     Run(FractalForm.Option.Debug);
                     break;
+#else
+                    goto case "C";
+#endif
 
                 case "S":
                     Run(FractalForm.Option.None);
                     break;
 
                 case "C":
-                    using (var configForm = new SettingsForm()) configForm.ShowDialog();
+                    using (SettingsForm configForm = new())
+                        configForm.ShowDialog();
+
                     break;
 
                 case "P":
-                    Application.Run(new FractalForm(new IntPtr(long.Parse(args[1]))));
+                    Run(args[1]);
                     break;
             }
         }
 
-        private static void Run(FractalForm.Option option)
-        {
-            Application.Run(new FractalForm(option));
-        }
+        private static void Run(FractalForm fractalForm) =>
+            Application.Run(fractalForm);
+
+        private static void Run(FractalForm.Option option) =>
+            Run(FractalForm.FromOption(option));
+
+        private static void Run(string address) =>
+            Run(FractalForm.FromIntPtr(new IntPtr(long.Parse(address))));
 
         private static void EnsureSaveDestinationIsSet()
         {

@@ -47,12 +47,13 @@ namespace FractalScreenSaver
 
         private const int HlsMaxValue = 240; // Determined through testing.
 
-        private readonly bool isDebug;
-        private readonly bool isPreview;
+        private bool IsDebug { get; init; }
+        private bool IsPreview { get; init; }
+
         private readonly Stopwatch watch = new();
-        private readonly List<Form> mirrorForms = new();
         private readonly Dictionary<int, Pen> Pens;
 
+        private IEnumerable<Form> mirrorForms;
         private bool isProcessing;
         private bool isApplicationClosed;
         private int stepsRemaining;
@@ -70,8 +71,8 @@ namespace FractalScreenSaver
         private bool DoSave =>
             stepsRemaining == 0 &&
             Screensaver.Settings.DoSaveFractal &&
-            isPreview == false &&
-            isDebug == false;
+            IsPreview == false &&
+            IsDebug == false;
 
         private static string SaveDirectory => Screensaver.Settings.SaveDestination;
 
@@ -79,35 +80,36 @@ namespace FractalScreenSaver
 
         public FractalForm()
         {
-            Pens = Enumerable.Range(0, HlsMaxValue + 1)
-                .ToDictionary(i => i, i => new Pen(GetColorFromHue(i), LogicalToDeviceUnits(1)));
-        }
-
-        public FractalForm(Option option) : this()
-        {
             InitializeComponent();
 
-            isDebug = option == Option.Debug;
+            Pens = Enumerable.Range(0, HlsMaxValue + 1).ToDictionary(i => i, GetPenFromHue);
+        }
 
-            if (isDebug == false)
+        public static FractalForm FromOption(Option option)
+        {
+            FractalForm form = new() { IsDebug = option == Option.Debug };
+
+            form.mirrorForms = Screen.AllScreens.Where(s => s.Primary == false).Select(form.CreateMirrorScreen).ToList();
+            if (form.IsDebug == false)
                 Cursor.Hide();
 
-            foreach (Screen screen in Screen.AllScreens.Where(s => s.Primary == false))
-                CreateMirrorScreen(screen);
+            return form;
         }
 
-        public FractalForm(IntPtr previewHandle) : this()
+        public static FractalForm FromIntPtr(IntPtr previewHandle)
         {
-            InitializeComponent();
+            FractalForm form = new() { IsPreview = true };
 
             // https://www.codeproject.com/articles/31376/making-a-c-screensaver
-            _ = SetParent(Handle, previewHandle);
-            _ = SetWindowLong(Handle, -16, new IntPtr(GetWindowLong(Handle, -16) | 0x40000000));
+            _ = SetParent(form.Handle, previewHandle);
+            _ = SetWindowLong(form.Handle, -16, new IntPtr(GetWindowLong(form.Handle, -16) | 0x40000000));
 
-            isPreview = true;
+            return form;
         }
 
-        public static Color GetColorFromHue(int hue)
+        private Pen GetPenFromHue(int hue) => new(GetColorFromHue(hue), LogicalToDeviceUnits(1));
+
+        private static Color GetColorFromHue(int hue)
         {
             const int luminance = HlsMaxValue / 2; // 0 is black, 240 is white.
             const int saturation = HlsMaxValue;
@@ -115,15 +117,15 @@ namespace FractalScreenSaver
             return ColorTranslator.FromWin32(ColorHLSToRGB(hue, luminance, saturation));
         }
 
-        private void CreateMirrorScreen(Screen screen)
+        private MirrorForm CreateMirrorScreen(Screen screen)
         {
-            var mirrorForm = new MirrorForm(screen.Bounds);
+            MirrorForm mirrorForm = new(screen.Bounds);
             mirrorForm.KeyDown += new KeyEventHandler(Fractal_KeyDown);
             mirrorForm.MouseClick += new MouseEventHandler(Fractal_MouseActivity);
             mirrorForm.MouseMove += new MouseEventHandler(Fractal_MouseActivity);
-
-            mirrorForms.Add(mirrorForm);
             mirrorForm.Show(this);
+
+            return mirrorForm;
         }
 
         private void Fractal_Load(object sender, EventArgs e)
@@ -159,7 +161,7 @@ namespace FractalScreenSaver
                     mf.Draw(image);
             });
 
-            if (isDebug)
+            if (IsDebug)
                 DrawDiagnostics(e.Graphics);
         }
 
@@ -217,7 +219,12 @@ namespace FractalScreenSaver
 
             using var g = Graphics.FromImage(image);
             foreach ((int hue, Vector2[] vertices) in GetPolylines(fractal.Vertices))
+            {
+                if (isApplicationClosed)
+                    return;
+
                 g.DrawLines(Pens[hue], vertices.Select(v => new PointF(v.X, v.Y)).ToArray());
+            }
 
             Invalidate();
         }
@@ -306,7 +313,7 @@ namespace FractalScreenSaver
 
         private void Fractal_KeyDown(object sender, KeyEventArgs e)
         {
-            if (isDebug)
+            if (IsDebug)
             {
                 if (e.KeyCode == Keys.Escape)
                     Application.Exit();
@@ -314,13 +321,13 @@ namespace FractalScreenSaver
                 return;
             }
 
-            if (isPreview == false)
+            if (IsPreview == false)
                 Application.Exit();
         }
 
         private void Fractal_MouseActivity(object sender, MouseEventArgs e)
         {
-            if (isPreview || isDebug)
+            if (IsPreview || IsDebug)
                 return;
 
             if (mousePos == null)
